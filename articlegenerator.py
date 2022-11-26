@@ -4,6 +4,7 @@ class ArticleGenerator:
 
     INTENT_DESCRIPTION = "Schreibe einen neuen Artikel für die Nachrichten, passend zu diesem Thema:"
     INTENT_TITLE = "Schreibe einen neuen Titel für diesen Artikel:"
+    INTENT_TAGS = "Gib mir Tags für diesen Artikel:"
 
     def __init__(self, openai_apikey):
         self.openai_apikey = openai_apikey
@@ -35,12 +36,27 @@ class ArticleGenerator:
             model="text-davinci-002",
             prompt=self.INTENT_DESCRIPTION + title,
             temperature=0.9,
-            max_tokens=3000,
+            max_tokens=3500,
             top_p=1,
             frequency_penalty=0.13,
             presence_penalty=0.3
         )
         return response.choices[0].text.strip()
+
+    def generateTags(self, description):
+        response = openai.Completion.create(
+            model="text-davinci-002",
+            prompt=self.INTENT_TAGS + description,
+            temperature=0.9,
+            max_tokens=3500,
+            top_p=1,
+            frequency_penalty=0.13,
+            presence_penalty=0.3
+        )
+
+        tags = response.choices[0].text.strip().split(",")
+        tags = [i.strip('#').strip() for i in tags]
+        return tags
 
     def generateArticle(self, title, description):
 
@@ -48,5 +64,6 @@ class ArticleGenerator:
         article["description"] = self.generateDescription(title)
         article["title"] = self.generateTitle(article["description"])
         article["image"] = self.generateImage(article["title"])
+        article["tags"] = self.generateTags(article["description"])
 
         return article

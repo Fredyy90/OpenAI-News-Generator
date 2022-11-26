@@ -6,6 +6,8 @@ from urllib.parse import urlparse
 
 class Wordpress:
 
+    tags = {}
+
     def __init__(self, url, username, password):
         self.url = url
         self.username = username
@@ -39,6 +41,31 @@ class Wordpress:
         else:
             return None
 
+    def get_all_tags(self):
+        response = requests.get(self.url + '/wp-json/wp/v2/tags', headers=self.header)
+        if(response.status_code == 200):
+            data = response.json()
+            for tag in data:
+                self.tags[tag["id"]] = tag["name"]
+            return data
+        else:
+            return None
+
+    def create_tag(self, name):
+        data = {
+            'name' : name,
+            'status': 'publish',
+        }
+
+        response = requests.post(self.url + '/wp-json/wp/v2/tags', headers=self.header, json=data)
+
+        if(response.status_code == 201):
+            data = response.json()
+            self.tags[data["id"]] = data["name"]
+            return data
+        else:
+            return None
+
     def create_post(self, title, content, image_path = None, categories = None, tags = None):
 
         data = {
@@ -55,11 +82,19 @@ class Wordpress:
         if(categories):
             data['categories'] = categories
         if(tags):
-            data['tags'] = tags
+            data['tags'] = []
+            for tag in tags:
+                if(tag in self.tags.values()):
+                    data['tags'].append(list(self.tags.keys())[list(self.tags.values()).index(tag)])
+                else:
+                    new_tag = self.create_tag(tag)
+                    if(new_tag != None):
+                        data['tags'].append(new_tag["id"])
 
         response = requests.post(self.url + '/wp-json/wp/v2/posts', headers=self.header, json=data)
 
         if(response.status_code == 201):
             return response.json()
         else:
+            #print(response.text)
             return None
