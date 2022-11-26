@@ -7,12 +7,14 @@ from urllib.parse import urlparse
 class Wordpress:
 
     tags = {}
+    categories = {}
 
     def __init__(self, url, username, password):
         self.url = url
         self.username = username
         self.password = password
         self.header = {'Authorization': 'Basic ' + base64.b64encode((username + ":" + password).encode()).decode('utf-8')}
+        self.get_all_categories()
 
     def create_media(self, file_path):
         if os.path.exists(file_path) == False:
@@ -21,6 +23,8 @@ class Wordpress:
                 file_name = urlparse(file_path).path.split('/')[-1]
                 file_type = mimetypes.guess_type(file_name)[0]
                 file_data = rsrc.content
+            else:
+                return None
         else:
             file_name = os.path.basename(file_path)
             file_type = mimetypes.guess_type(file_name)[0]
@@ -38,6 +42,20 @@ class Wordpress:
 
         if(response.status_code == 201):
             return response.json()
+        else:
+            return None
+
+    def get_all_categories(self):
+
+        if len(self.categories) > 0:
+            return self.categories
+
+        response = requests.get(self.url + '/wp-json/wp/v2/categories', headers=self.header)
+        if(response.status_code == 200):
+            data = response.json()
+            for category in data:
+                self.categories[category["id"]] = category["name"]
+            return self.categories
         else:
             return None
 
@@ -66,7 +84,7 @@ class Wordpress:
         else:
             return None
 
-    def create_post(self, title, content, image_path = None, categories = None, tags = None):
+    def create_post(self, title, content, image_path = None, category = None, tags = None):
 
         data = {
             'title' : title,
@@ -79,8 +97,10 @@ class Wordpress:
             if(media != None):
                 data["featured_media"] = media["id"]
 
-        if(categories):
-            data['categories'] = categories
+        if(category):
+            data['categories'] = []
+            if(category in self.categories.values()):
+                data['categories'].append(list(self.categories.keys())[list(self.categories.values()).index(category)])
         if(tags):
             data['tags'] = []
             for tag in tags:

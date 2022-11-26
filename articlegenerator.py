@@ -5,6 +5,7 @@ class ArticleGenerator:
     INTENT_DESCRIPTION = "Schreibe einen neuen Artikel für die Nachrichten, passend zu diesem Thema:"
     INTENT_TITLE = "Schreibe einen neuen Titel für diesen Artikel:"
     INTENT_TAGS = "Gib mir Tags für diesen Artikel:"
+    INTENT_CATEGORY = "Welche Kategorie passt am besten für den Text: "
 
     def __init__(self, openai_apikey):
         self.openai_apikey = openai_apikey
@@ -54,16 +55,34 @@ class ArticleGenerator:
             presence_penalty=0.3
         )
 
-        tags = response.choices[0].text.strip().split(",")
+        raw_tags = response.choices[0].text.strip()
+        if "," in raw_tags:
+            tags = raw_tags.split(",")
+        else:
+            tags = raw_tags.split(" ")
+
         tags = [i.strip('#').strip() for i in tags]
         return tags
 
-    def generateArticle(self, title, description):
+    def getCategory(self, categories, description):
+        response = openai.Completion.create(
+            model="text-davinci-002",
+            prompt=self.INTENT_CATEGORY + ' ,'.join(categories.values()) + "\n\n" + description,
+            temperature=0.9,
+            max_tokens=2000,
+            top_p=1,
+            frequency_penalty=0.13,
+            presence_penalty=0.3
+        )
+        return response.choices[0].text.strip().rsplit(':', 1)[-1]
+
+    def generateArticle(self, title, description, categories):
 
         article = {}
         article["description"] = self.generateDescription(title)
         article["title"] = self.generateTitle(article["description"])
         article["image"] = self.generateImage(article["title"])
         article["tags"] = self.generateTags(article["description"])
+        article["category"] = self.getCategory(categories, article["description"])
 
         return article
