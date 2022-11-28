@@ -1,8 +1,8 @@
 import feedparser
 import os
 import json
+from config import *
 
-RSS_FEED = "https://www.tagesschau.de/xml/rss2/"
 def getSourceFeed(feedUrl = RSS_FEED):
     feed = feedparser.parse(feedUrl)
     return feed.entries
@@ -11,7 +11,7 @@ def getSourceFeed(feedUrl = RSS_FEED):
 def saveJson(data, filename):
 
     with open(filename, 'w') as outfile:
-        json.dump(data, outfile)
+        json.dump(data, outfile, indent=4)
 
 def loadJson(filename):
     if os.path.exists(filename) == False:

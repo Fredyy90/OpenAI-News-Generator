@@ -4,7 +4,6 @@ from articlegenerator import ArticleGenerator
 from functions import *
 from config import *
 import pathlib
-import openai
 import sys
 
 BASE_FOLDER = pathlib.Path(__file__).parent.resolve()
@@ -29,39 +28,26 @@ def main():
             print("Title: " + entry.title)
             print("Description: " + entry.description)
 
-            try:
+            newArticle = article_generator.generateArticle(entry.title, entry.description, categories=wordpress.get_all_categories())
 
-                newArticle = article_generator.generateArticle(entry.title, entry.description, categories=wordpress.get_all_categories())
+            output = {
+                "old":{
+                    "title": entry.title,
+                    "description": entry.description
+                },
+                "new": newArticle
+            }
 
-                output = {
-                    "old":{
-                        "title": entry.title,
-                        "description": entry.description
-                    },
-                    "new":{
-                        "title": newArticle["title"],
-                        "description": newArticle["description"],
-                        "image": newArticle["image"],
-                        "tags": newArticle["tags"]
-                    }
-                }
+            if ("title" in newArticle
+                and "description" in newArticle
+                and "image" in newArticle
+                and "tags" in newArticle
+                and "category" in newArticle):
 
-                wordpress.create_post(newArticle["title"], newArticle["description"], newArticle["image"], tags=newArticle["tags"])
-            except Exception as err:
-                output = {
-                    "old":{
-                        "title": entry.title,
-                        "description": entry.description
-                    },
-                    "new":{
-                        "title": "ERROR",
-                        "description": str(err),
-                    }
-                }
-
+                wordpress.create_post(newArticle["title"], newArticle["description"], newArticle["image"], tags=newArticle["tags"], category=newArticle["category"])
 
             data[entry["guid"]] = output
-            pprint(newArticle)
+            pprint(output)
             saveJson(data, DATA_FILE)
             sys.exit()
 
