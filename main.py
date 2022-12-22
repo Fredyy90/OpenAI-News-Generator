@@ -49,7 +49,6 @@ def main():
             data[entry["guid"]] = output
             pprint(output)
             saveJson(data, DATA_FILE)
-            sys.exit()
 
 
 if  __name__ ==  "__main__" :

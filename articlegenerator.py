@@ -35,7 +35,7 @@ class ArticleGenerator:
     def generateDescription(self, title):
         response = openai.Completion.create(
             model="text-davinci-002",
-            prompt=self.INTENT_DESCRIPTION + title,
+            prompt=self.INTENT_DESCRIPTION + title + "\n\n",
             temperature=0.9,
             max_tokens=3500,
             top_p=1,
